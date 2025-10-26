@@ -1,10 +1,9 @@
 reviews:
-  profile: chill
-  request_changes_workflow: false
+  profile: assertive
+  request_changes_workflow: true
   high_level_summary: true
-  poem: true
+  poem: false
   review_status: true
-  collapse_ellipsis: false
   auto_review:
     enabled: true
     drafts: false
