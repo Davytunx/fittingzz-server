@@ -64,6 +64,9 @@ export class UserService {
     }
 
     // Verify password
+    if (!user.password) {
+      throw new UnauthorizedError('Invalid credentials');
+    }
     const isPasswordValid = await bcrypt.compare(loginData.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid credentials');

@@ -3,12 +3,13 @@ import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
 export const jwtToken = {
-  sign: (payload: object) => {
+  sign: (payload: object): string => {
     try {
-      return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn } as any) as string;
     } catch (error) {
-      logger.error('Failed to authenticate token:', error);
-      throw new Error('Failed to authenticate token');
+      logger.error('Failed to sign token:', error);
+      throw new Error('Failed to sign token');
     }
   },
   

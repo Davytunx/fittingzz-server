@@ -4,7 +4,7 @@ import { validateBody } from '../middleware/validate.middleware.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { signupSchema, loginSchema, updateProfileSchema } from '../modules/user/user.validation.js';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * @swagger
