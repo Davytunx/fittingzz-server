@@ -1,0 +1,37 @@
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: true
+  review_status: true
+  collapse_ellipsis: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!logs/**"
+    - "!drizzle/**"
+    - "!*.log"
+  path_instructions:
+    - path: "src/**/*.ts"
+      instructions: |
+        Focus on:
+        - Type safety and proper TypeScript usage
+        - Security vulnerabilities
+        - Performance issues
+        - Code maintainability
+        - API design patterns
+    - path: "src/modules/**"
+      instructions: |
+        Review for:
+        - Clean architecture principles
+        - Proper separation of concerns
+        - Error handling
+    - path: "src/config/**"
+      instructions: |
+        Check for:
+        - Environment variable validation
+        - Security configurations
+        - Missing required settings
