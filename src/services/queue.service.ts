@@ -1,6 +1,6 @@
 import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
-import config from '../config/index.js';
+import { config } from '../config/index.js';
 import logger from '../config/logger.js';
 
 // Create ioredis connection for BullMQ with Upstash-specific config

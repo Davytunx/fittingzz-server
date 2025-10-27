@@ -12,7 +12,7 @@ const securityMiddleware = async (
 ): Promise<void> => {
   try {
     // Skip rate limiting for docs and health endpoints
-    if (req.path.includes('/docs') || req.path === '/health' || req.path === '/') {
+    if (req.path.startsWith(`/api/${config.app.version}/docs`) || req.path === '/health' || req.path === '/') {
       next();
       return;
     }

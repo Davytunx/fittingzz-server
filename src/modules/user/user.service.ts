@@ -257,7 +257,8 @@ export class UserService {
             }
             await emailService.sendWelcomeEmail(user.email, user.businessName);
           } catch (error) {
-            logger.warn('Failed to send emails:', error.message);
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn('Failed to send emails', { error: msg });
           }
         });
       }
