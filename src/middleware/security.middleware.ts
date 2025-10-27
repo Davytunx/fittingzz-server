@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import aj from '../config/arcjet.js';
 import logger from '../config/logger.js';
+import config from '../config/index.js';
 import { slidingWindow } from '@arcjet/node';
 import { errorResponse } from '../utils/response.js';
 
@@ -10,6 +11,12 @@ const securityMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Skip rate limiting for docs and health endpoints
+    if (req.path.includes('/docs') || req.path === '/health' || req.path === '/') {
+      next();
+      return;
+    }
+
     const role = (req as { user?: { role?: string } }).user?.role || 'guest';
 
     let limit: number;
@@ -25,12 +32,13 @@ const securityMiddleware = async (
         message = 'Business request limit exceeded (50 per minute). Slow down';
         break;
       case 'guest':
-        limit = 10;
-        message = 'Guest request limit exceeded (10 per minute). Slow down';
+        // Higher limit in development for testing
+        limit = config.app.isDevelopment ? 50 : 10;
+        message = `Guest request limit exceeded (${limit} per minute). Slow down`;
         break;
       default:
-        limit = 10;
-        message = 'Request limit exceeded (10 per minute). Slow down';
+        limit = config.app.isDevelopment ? 50 : 10;
+        message = `Request limit exceeded (${limit} per minute). Slow down`;
     }
 
     const client = aj.withRule(

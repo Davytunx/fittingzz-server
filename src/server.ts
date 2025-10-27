@@ -24,7 +24,7 @@ const startServer = () => {
 
     if (config.app.isDevelopment) {
       logger.info(
-        `📖 API Documentation: http://localhost:${config.app.port}/api/${config.app.version}`
+        `📖 API Documentation: http://localhost:${config.app.port}/api/${config.app.version}/docs`
       );
       logger.info(`🏥 Health Check: http://localhost:${config.app.port}/health`);
       logger.info('⚡ Background jobs: Redis queue system active');

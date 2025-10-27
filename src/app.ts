@@ -12,6 +12,7 @@ import { successResponse } from './utils/response.js';
 import securityMiddleware from './middleware/security.middleware.js';
 
 import authRouter from './routes/auth.route.js';
+import { setupSwagger } from './config/swagger.js';
 
 const app: Express = express();
 
@@ -120,6 +121,9 @@ app.get(API_PREFIX, (req: Request, res: Response) => {
     version: config.app.version,
   });
 });
+
+// Setup Swagger documentation
+setupSwagger(app);
 
 // Mount route modules
 app.use(`${API_PREFIX}/auth`, authRouter);
