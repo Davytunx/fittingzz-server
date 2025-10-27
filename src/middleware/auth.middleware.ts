@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError } from '../utils/errors.js';
 import { userService } from '../modules/user/user.service.js';
 import { cookies } from '../utils/cookies.js';
+import { cache } from '../config/cache.js';
 
 /**
  * Authentication middleware - supports both Bearer token and cookies
@@ -23,10 +24,21 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       throw new UnauthorizedError('Access token required');
     }
 
-    const decoded = userService.verifyToken(token);
+    // Check cache first for faster auth
+    const cacheKey = `auth:${token.slice(-8)}`;
+    let decoded = cache.get(cacheKey);
     
-    // Add user info to request
-    (req as Request & { user: typeof decoded }).user = decoded;
+    if (!decoded) {
+      decoded = userService.verifyToken(token);
+      cache.set(cacheKey, decoded, 300000); // 5 minutes
+    }
+    
+    // Add user info to request with consistent property names
+    (req as Request & { user: { id: string; email: string; role: string } }).user = {
+      id: decoded.userId,
+      email: decoded.email,
+      role: decoded.role
+    };
     
     next();
   } catch (error) {
