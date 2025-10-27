@@ -28,7 +28,6 @@ async function createSuperAdmin() {
       email,
       password: hashedPassword,
       role: 'super_admin',
-      authProvider: 'local',
       isEmailVerified: true,
       isActive: true,
     }).returning();
@@ -36,7 +35,7 @@ async function createSuperAdmin() {
     console.log('✅ Super admin created successfully');
     console.log('📧 Email:', email);
     console.log('🔑 Password:', password);
-    console.log('🆔 ID:', result[0].id);
+    console.log('🆔 ID:', result[0]?.id);
     
   } catch (error) {
     console.error('❌ Failed to create super admin:', error);

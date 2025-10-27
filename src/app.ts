@@ -12,6 +12,9 @@ import { successResponse } from './utils/response.js';
 import securityMiddleware from './middleware/security.middleware.js';
 
 import authRouter from './routes/auth.route.js';
+import clientRouter from './routes/client.route.js';
+import { setupSwagger } from './config/swagger.js';
+import { errorMonitoringMiddleware, globalErrorHandler } from './middleware/error-monitoring.middleware.js';
 
 const app: Express = express();
 
@@ -55,6 +58,11 @@ app.use(
     stream: { write: (message) => logger.info(message.trim()) },
   })
 );
+
+/**
+ * Error monitoring middleware
+ */
+app.use(errorMonitoringMiddleware);
 
 /**
  * Arcjet security protection with role-based rate limiting
@@ -121,8 +129,12 @@ app.get(API_PREFIX, (req: Request, res: Response) => {
   });
 });
 
+// Setup Swagger documentation
+setupSwagger(app);
+
 // Mount route modules
 app.use(`${API_PREFIX}/auth`, authRouter);
+app.use(`${API_PREFIX}/clients`, clientRouter);
 
 /**
  * 404 handler - must be after all routes
@@ -130,8 +142,9 @@ app.use(`${API_PREFIX}/auth`, authRouter);
 app.use(notFoundHandler);
 
 /**
- * Global error handler - must be last
+ * Global error handlers - must be last
  */
+app.use(globalErrorHandler);
 app.use(errorHandler);
 
 export default app;

@@ -3,6 +3,7 @@ import { db } from '../../config/database.js';
 import { users } from './user.schema.js';
 import type { Database } from '../../config/database.js';
 import { IUserRepository } from '../../interfaces/repository.interface.js';
+import logger from '../../config/logger.js';
 
 export class UserRepository implements IUserRepository {
   private db: Database;
@@ -83,6 +84,126 @@ export class UserRepository implements IUserRepository {
    */
   async updateLastLogin(id: string) {
     return this.update(id, { lastLoginAt: new Date() });
+  }
+
+  /**
+   * Set email verification code
+   */
+  async setEmailVerificationCode(id: string, code: string, expiresAt: Date) {
+    return this.update(id, {
+      emailVerificationCode: code,
+      emailVerificationExpiresAt: expiresAt
+    });
+  }
+
+  /**
+   * Verify email with code
+   */
+  async verifyEmailWithCode(email: string, code: string) {
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    const user = result[0];
+    if (!user || !user.emailVerificationCode || !user.emailVerificationExpiresAt) {
+      return null;
+    }
+
+    if (user.emailVerificationCode !== code) {
+      // Log failed attempt for monitoring
+      logger.warn('Invalid verification code attempt', {
+        email: user.email,
+        attemptedCode: code,
+        userId: user.id
+      });
+      return null; // Invalid code
+    }
+
+    if (new Date() > user.emailVerificationExpiresAt) {
+      return null; // Code expired
+    }
+
+    // Mark as verified and clear code
+    await this.update(user.id, {
+      isEmailVerified: true,
+      emailVerificationCode: null,
+      emailVerificationExpiresAt: null
+    });
+
+    return user;
+  }
+
+  /**
+   * Set password reset code
+   */
+  async setPasswordResetCode(email: string, code: string, expiresAt: Date) {
+    const result = await this.db
+      .update(users)
+      .set({
+        passwordResetCode: code,
+        passwordResetExpiresAt: expiresAt
+      })
+      .where(eq(users.email, email))
+      .returning();
+
+    return result[0] || null;
+  }
+
+  /**
+   * Verify password reset code
+   */
+  async verifyPasswordResetCode(email: string, code: string) {
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    const user = result[0];
+    if (!user || !user.passwordResetCode || !user.passwordResetExpiresAt) {
+      return null;
+    }
+
+    if (user.passwordResetCode !== code) {
+      logger.warn('Invalid password reset code attempt', {
+        email: user.email,
+        attemptedCode: code,
+        userId: user.id
+      });
+      return null;
+    }
+
+    if (new Date() > user.passwordResetExpiresAt) {
+      return null; // Code expired
+    }
+
+    return user;
+  }
+
+  /**
+   * Reset password with code
+   */
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.verifyPasswordResetCode(email, code);
+    if (!user) {
+      return null;
+    }
+
+    // Update password and clear reset code
+    const result = await this.db
+      .update(users)
+      .set({
+        password: newPassword,
+        passwordResetCode: null,
+        passwordResetExpiresAt: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+
+    return result[0] || null;
   }
 
 

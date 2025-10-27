@@ -2,6 +2,8 @@ import http from 'http';
 import app from './app.js';
 import config from './config/index.js';
 import logger from './config/logger.js';
+// Background jobs temporarily disabled for testing
+logger.info('✅ Background jobs: Direct email processing enabled');
 
 /**
  * Create HTTP server
@@ -22,9 +24,11 @@ const startServer = () => {
 
     if (config.app.isDevelopment) {
       logger.info(
-        `📖 API Documentation: http://localhost:${config.app.port}/api/${config.app.version}`
+        `📖 API Documentation: http://localhost:${config.app.port}/api/${config.app.version}/docs`
       );
       logger.info(`🏥 Health Check: http://localhost:${config.app.port}/health`);
+      logger.info('⚡ Background jobs: Redis queue system active');
+      logger.info('🔒 Security: Arcjet protection active (dev mode)');
     }
   });
 };

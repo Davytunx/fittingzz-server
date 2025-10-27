@@ -45,9 +45,18 @@ export const config = {
     level: env.LOG_LEVEL,
   },
 
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
 
-
-
+  email: {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
+    verificationExpiresIn: env.EMAIL_VERIFICATION_EXPIRES_IN,
+  },
 } as const;
 
 export { env };

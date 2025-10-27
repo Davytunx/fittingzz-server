@@ -4,10 +4,10 @@
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  create(data: CreateUserDto): Promise<User>;
+  create(data: CreateUserDto): Promise<User | undefined>;
   update(id: string, data: UpdateUserDto): Promise<User | null>;
-  delete(id: string): Promise<void>;
-  updateLastLogin(id: string): Promise<void>;
+  delete(id: string): Promise<User | null>;
+  updateLastLogin(id: string): Promise<User | null>;
 }
 
 import { User, NewUser } from '../modules/user/user.dto.js';
