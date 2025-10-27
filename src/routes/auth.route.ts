@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { userController } from '../modules/user/user.controller.js';
 import { validateBody } from '../middleware/validate.middleware.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { signupSchema, loginSchema, updateProfileSchema } from '../modules/user/user.validation.js';
+import { verificationCodeRateLimit, verificationAttemptRateLimit } from '../middleware/verification.middleware.js';
+import { signupSchema, loginSchema, updateProfileSchema, resendVerificationSchema, verifyEmailSchema, requestPasswordResetSchema, verifyResetCodeSchema, resetPasswordSchema } from '../modules/user/user.validation.js';
 
 const router: Router = Router();
 
@@ -66,6 +67,49 @@ router.put('/profile', authenticate, validateBody(updateProfileSchema), userCont
  */
 router.delete('/account', authenticate, userController.deleteAccount);
 
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     summary: Verify email address with 6-digit code
+ *     tags: [Auth]
+ */
+router.post('/verify-email', verificationAttemptRateLimit, validateBody(verifyEmailSchema), userController.verifyEmail);
 
+/**
+ * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Auth]
+ */
+router.post('/resend-verification', verificationCodeRateLimit, validateBody(resendVerificationSchema), userController.resendVerificationEmail);
+
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request password reset code
+ *     tags: [Auth]
+ */
+router.post('/forgot-password', verificationCodeRateLimit, validateBody(requestPasswordResetSchema), userController.requestPasswordReset);
+
+/**
+ * @swagger
+ * /auth/verify-reset-code:
+ *   post:
+ *     summary: Verify password reset code
+ *     tags: [Auth]
+ */
+router.post('/verify-reset-code', verificationAttemptRateLimit, validateBody(verifyResetCodeSchema), userController.verifyResetCode);
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     tags: [Auth]
+ */
+router.post('/reset-password', verificationAttemptRateLimit, validateBody(resetPasswordSchema), userController.resetPassword);
 
 export default router;

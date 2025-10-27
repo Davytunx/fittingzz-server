@@ -38,12 +38,23 @@ const envSchema = z.object({
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
 
   // Bcrypt
-  BCRYPT_SALT_ROUNDS: z.string().transform(Number).default(12),
+  BCRYPT_SALT_ROUNDS: z.string().transform(Number).default(8),
 
   // Arcjet
   ARCJET_KEY: z.string().min(1, 'ARCJET_KEY is required'),
 
+  // Redis (Upstash)
+  UPSTASH_REDIS_REST_URL: z.string().url(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
 
+  // Email (SMTP)
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.string().transform(Number).default(587),
+  SMTP_USER: z.string().email().optional(),
+  SMTP_PASS: z.string().optional(),
+
+  // Email Verification
+  EMAIL_VERIFICATION_EXPIRES_IN: z.string().default('24h'),
 });
 
 /**
