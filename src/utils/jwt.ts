@@ -5,8 +5,13 @@ import config from '../config/index.js';
 export const jwtToken = {
   sign: (payload: object, customOptions?: { expiresIn?: string }): string => {
     try {
-      const expiresIn = customOptions?.expiresIn || config.jwt.expiresIn;
-      const token = jwt.sign(payload, config.jwt.secret, { expiresIn });
+      const options: SignOptions = {};
+      if (customOptions?.expiresIn) {
+        options.expiresIn = customOptions.expiresIn;
+      } else {
+        options.expiresIn = config.jwt.expiresIn;
+      }
+      const token = jwt.sign(payload, config.jwt.secret, options);
       return token;
     } catch (error) {
       logger.error('Failed to sign token:', error);
