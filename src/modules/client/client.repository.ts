@@ -23,38 +23,48 @@ export class ClientRepository {
   async findByAdminId(adminId: string, options?: { offset?: number; limit?: number; search?: string }) {
     const { offset = 0, limit = 50, search } = options || {};
     
-    let whereCondition = eq(clients.adminId, adminId);
-    
     if (search) {
-      whereCondition = and(
-        eq(clients.adminId, adminId),
-        ilike(clients.name, `%${search}%`)
-      );
+      return await this.db
+        .select()
+        .from(clients)
+        .where(
+          and(
+            eq(clients.adminId, adminId),
+            ilike(clients.name, `%${search}%`)
+          )
+        )
+        .orderBy(desc(clients.createdAt))
+        .offset(offset)
+        .limit(limit);
     }
     
     return await this.db
       .select()
       .from(clients)
-      .where(whereCondition)
+      .where(eq(clients.adminId, adminId))
       .orderBy(desc(clients.createdAt))
       .offset(offset)
       .limit(limit);
   }
 
   async countByAdminId(adminId: string, search?: string) {
-    let whereCondition = eq(clients.adminId, adminId);
-    
     if (search) {
-      whereCondition = and(
-        eq(clients.adminId, adminId),
-        ilike(clients.name, `%${search}%`)
-      );
+      const result = await this.db
+        .select({ count: count() })
+        .from(clients)
+        .where(
+          and(
+            eq(clients.adminId, adminId),
+            ilike(clients.name, `%${search}%`)
+          )
+        );
+      return result[0]?.count || 0;
     }
     
     const result = await this.db
       .select({ count: count() })
       .from(clients)
-      .where(whereCondition);
+      .where(eq(clients.adminId, adminId));
     
     return result[0]?.count || 0;
   }

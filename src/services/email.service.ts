@@ -117,8 +117,8 @@ class EmailService {
       logger.info('Email sent successfully', { to, messageId: result.messageId });
       return { success: true, messageId: result.messageId };
     } catch (error) {
-      logger.error('Failed to send email:', { to, error: error.message });
-      return { success: false, error: error.message };
+      logger.error('Failed to send email:', { to, error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
     }
   }
 }
