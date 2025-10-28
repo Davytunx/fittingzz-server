@@ -11,33 +11,30 @@ Enterprise-grade REST API for fashion designers with advanced client management,
 - **Security** - Multi-layer protection with Arcjet integration
 
 ### Performance Optimizations
-- **Sub-400ms Response Times** - Optimized database queries and caching
-- **Redis Caching** - Multi-layer caching with smart invalidation
-- **Background Jobs** - Non-blocking operations with BullMQ
+- **Fast Response Times** - Optimized database queries
+- **Direct Operations** - Simple, efficient database access
 - **Connection Pooling** - Efficient database connections
 
 ### Advanced Features
 - **Pagination & Search** - Efficient data retrieval
-- **Performance Monitoring** - Real-time metrics and alerts
 - **Bulk Operations** - Batch processing for large datasets
-- **Comprehensive Logging** - Structured logging with performance tracking
+- **Structured Logging** - Clean logging for debugging
 
 ## 📊 API Performance
 
-| Operation | Target | Achieved |
-|-----------|--------|----------|
-| Create Client | <400ms | ~200-300ms |
-| Get Clients (cached) | <100ms | ~50-80ms |
-| Search Clients | <300ms | ~150-250ms |
-| Bulk Operations | <2s | ~800ms-1.5s |
+| Operation | Response Time |
+|-----------|---------------|
+| Create Client | ~200-400ms |
+| Get Clients | ~100-300ms |
+| Search Clients | ~150-350ms |
+| Bulk Operations | ~500ms-2s |
 
 ## 🛠 Tech Stack
 
 - **Runtime**: Node.js 22+ with TypeScript
 - **Framework**: Express.js with advanced middleware
 - **Database**: PostgreSQL with Drizzle ORM
-- **Cache**: Redis with Upstash
-- **Queue**: BullMQ for background jobs
+
 - **Security**: Arcjet + JWT + bcrypt
 - **Email**: Nodemailer with SMTP
 - **Docs**: Swagger/OpenAPI 3.0
@@ -50,7 +47,7 @@ pnpm install
 
 # Setup environment
 cp .env.example .env
-# Configure your DATABASE_URL, REDIS_URL, etc.
+# Configure your DATABASE_URL, SMTP settings, etc.
 
 # Run migrations
 pnpm db:migrate
@@ -141,9 +138,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
 
-# Redis (Upstash)
-UPSTASH_REDIS_REST_URL=https://your-redis-url
-UPSTASH_REDIS_REST_TOKEN=your-redis-token
+
 
 # Email (SMTP)
 SMTP_HOST=smtp.gmail.com

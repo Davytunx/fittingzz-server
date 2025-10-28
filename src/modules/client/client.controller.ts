@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { clientService } from './client.service.js';
 import { createClientSchema, updateClientSchema, clientParamsSchema } from './client.validation.js';
 import { AppError } from '../../utils/errors.js';
-import { performance } from 'perf_hooks';
+
 import logger from '../../config/logger.js';
 
 interface AuthenticatedRequest extends Request {
@@ -10,18 +10,11 @@ interface AuthenticatedRequest extends Request {
 }
 
 export class ClientController {
-  private logRequest(method: string, duration: number, success: boolean, userId?: string): void {
-    const level = duration > 300 ? 'warn' : 'info';
-    logger[level](`Client ${method}`, {
-      duration: `${duration.toFixed(2)}ms`,
-      success,
-      userId,
-      performance: duration <= 200 ? 'excellent' : duration <= 400 ? 'good' : 'slow'
-    });
+  private logRequest(method: string, success: boolean, userId?: string) {
+    logger.info(`Client ${method}`, { success, userId });
   }
 
-  async createClient(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async createClient(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -31,18 +24,15 @@ export class ClientController {
       const validatedData = createClientSchema.parse(req.body);
       const result = await clientService.createClient(adminId, validatedData);
 
-      const duration = performance.now() - start;
-      this.logRequest('create', duration, true, adminId);
+      this.logRequest('create', true, adminId);
 
-      return res.status(201).json({
+      res.status(201).json({
         success: true,
         message: 'Client created successfully',
-        data: result.data,
-        meta: { duration: `${duration.toFixed(2)}ms` }
+        data: result.data
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('create', duration, false, req.user?.id);
+      this.logRequest('create', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -50,16 +40,15 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: (error as any).errors || (error as Error).message,
+        errors: error.errors || error.message,
       });
     }
   }
 
-  async getClients(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async getClients(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -72,20 +61,14 @@ export class ClientController {
 
       const result = await clientService.getClients(adminId, { page, limit, search });
 
-      const duration = performance.now() - start;
-      this.logRequest('list', duration, true, adminId);
+      this.logRequest('list', true, adminId);
 
-      return res.json({
+      res.json({
         success: true,
-        data: result.data,
-        meta: {
-          duration: `${duration.toFixed(2)}ms`,
-          cached: duration < 50
-        }
+        data: result.data
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('list', duration, false, req.user?.id);
+      this.logRequest('list', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -93,15 +76,14 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: 'Internal server error',
       });
     }
   }
 
-  async getClientById(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async getClientById(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -111,17 +93,14 @@ export class ClientController {
       const { id } = clientParamsSchema.parse(req.params);
       const result = await clientService.getClientById(id, adminId);
 
-      const duration = performance.now() - start;
-      this.logRequest('get', duration, true, adminId);
+      this.logRequest('get', true, adminId);
 
-      return res.json({
+      res.json({
         success: true,
-        data: result.data,
-        meta: { duration: `${duration.toFixed(2)}ms` }
+        data: result.data
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('get', duration, false, req.user?.id);
+      this.logRequest('get', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -129,16 +108,15 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: (error as any).errors || (error as Error).message,
+        errors: error.errors || error.message,
       });
     }
   }
 
-  async updateClient(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async updateClient(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -149,18 +127,15 @@ export class ClientController {
       const validatedData = updateClientSchema.parse(req.body);
       const result = await clientService.updateClient(id, adminId, validatedData);
 
-      const duration = performance.now() - start;
-      this.logRequest('update', duration, true, adminId);
+      this.logRequest('update', true, adminId);
 
-      return res.json({
+      res.json({
         success: true,
         message: 'Client updated successfully',
-        data: result.data,
-        meta: { duration: `${duration.toFixed(2)}ms` }
+        data: result.data
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('update', duration, false, req.user?.id);
+      this.logRequest('update', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -168,16 +143,15 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: (error as any).errors || (error as Error).message,
+        errors: error.errors || error.message,
       });
     }
   }
 
-  async deleteClient(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async deleteClient(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -187,17 +161,14 @@ export class ClientController {
       const { id } = clientParamsSchema.parse(req.params);
       const result = await clientService.deleteClient(id, adminId);
 
-      const duration = performance.now() - start;
-      this.logRequest('delete', duration, true, adminId);
+      this.logRequest('delete', true, adminId);
 
-      return res.json({
+      res.json({
         success: true,
-        message: result.message,
-        meta: { duration: `${duration.toFixed(2)}ms` }
+        message: result.message
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('delete', duration, false, req.user?.id);
+      this.logRequest('delete', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -205,16 +176,15 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors: (error as any).errors || (error as Error).message,
+        errors: error.errors || error.message,
       });
     }
   }
 
-  async getClientStats(req: AuthenticatedRequest, res: Response): Promise<Response> {
-    const start = performance.now();
+  async getClientStats(req: AuthenticatedRequest, res: Response) {
     try {
       const adminId = req.user?.id;
       if (!adminId) {
@@ -223,17 +193,14 @@ export class ClientController {
 
       const result = await clientService.getClientStats(adminId);
 
-      const duration = performance.now() - start;
-      this.logRequest('stats', duration, true, adminId);
+      this.logRequest('stats', true, adminId);
 
-      return res.json({
+      res.json({
         success: true,
-        data: result.data,
-        meta: { duration: `${duration.toFixed(2)}ms` }
+        data: result.data
       });
     } catch (error) {
-      const duration = performance.now() - start;
-      this.logRequest('stats', duration, false, req.user?.id);
+      this.logRequest('stats', false, req.user?.id);
 
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
@@ -241,7 +208,7 @@ export class ClientController {
           message: error.message,
         });
       }
-      return res.status(500).json({
+      res.status(500).json({
         success: false,
         message: 'Internal server error',
       });
