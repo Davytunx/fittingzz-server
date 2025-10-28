@@ -115,19 +115,11 @@ export class ClientService {
         throw new AppError('Invalid parameters', 400);
       }
 
-      const cacheKey = this.getCacheKey('single', id, adminId);
-      const cachedClient = cache.get(cacheKey);
-      
-      if (cachedClient) {
-        return { success: true, data: cachedClient };
-      }
-      
       const client = await this.clientRepo.findById(id, adminId);
       if (!client) {
         throw new AppError('Client not found', 404);
       }
       
-      cache.set(cacheKey, client, this.CACHE_TTL);
       return { success: true, data: client };
     });
   }

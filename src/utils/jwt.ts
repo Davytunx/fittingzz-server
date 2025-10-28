@@ -1,12 +1,12 @@
 import logger from '../config/logger.js';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
 export const jwtToken = {
   sign: (payload: object, customOptions?: { expiresIn?: string }): string => {
     try {
       const expiresIn = customOptions?.expiresIn || config.jwt.expiresIn;
-      const token = jwt.sign(payload, config.jwt.secret, { expiresIn: expiresIn as string });
+      const token = jwt.sign(payload, config.jwt.secret, { expiresIn });
       return token;
     } catch (error) {
       logger.error('Failed to sign token:', error);
