@@ -116,7 +116,7 @@ export class ClientService {
       }
 
       const cacheKey = this.getCacheKey('single', id, adminId);
-      let client = cache.get(cacheKey);
+      let client = cache.get(cacheKey) as any;
       
       if (!client) {
         client = await this.clientRepo.findById(id, adminId);

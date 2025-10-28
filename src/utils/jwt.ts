@@ -3,16 +3,10 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import config from '../config/index.js';
 
 export const jwtToken = {
-  sign: (payload: object, customOptions?: SignOptions): string => {
+  sign: (payload: object, customOptions?: { expiresIn?: string }): string => {
     try {
-      const options: SignOptions = { 
-        expiresIn: config.jwt.expiresIn,
-        ...(customOptions || {})
-      };
-      const token = jwt.sign(payload, config.jwt.secret, options);
-      if (typeof token !== 'string') {
-        throw new Error('Expected JWT to be a string');
-      }
+      const expiresIn = customOptions?.expiresIn || config.jwt.expiresIn;
+      const token = jwt.sign(payload, config.jwt.secret, { expiresIn });
       return token;
     } catch (error) {
       logger.error('Failed to sign token:', error);
