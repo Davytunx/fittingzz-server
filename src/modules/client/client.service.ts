@@ -119,11 +119,10 @@ export class ClientService {
       let client = cache.get(cacheKey);
       
       if (!client) {
-        const foundClient = await this.clientRepo.findById(id, adminId);
-        if (!foundClient) {
+        client = await this.clientRepo.findById(id, adminId);
+        if (!client) {
           throw new AppError('Client not found', 404);
         }
-        client = foundClient;
         cache.set(cacheKey, client, this.CACHE_TTL);
       }
       

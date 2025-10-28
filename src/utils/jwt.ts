@@ -6,7 +6,8 @@ export const jwtToken = {
   sign: (payload: object, customOptions?: SignOptions): string => {
     try {
       const options: SignOptions = { 
-        expiresIn: (customOptions?.expiresIn as string) || config.jwt.expiresIn 
+        expiresIn: config.jwt.expiresIn,
+        ...(customOptions || {})
       };
       const token = jwt.sign(payload, config.jwt.secret, options);
       if (typeof token !== 'string') {
