@@ -26,7 +26,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     // Check cache first for faster auth
     const cacheKey = `auth:${token.slice(-8)}`;
-    let decoded = cache.get(cacheKey);
+    let decoded = cache.get(cacheKey) as { userId: string; email: string; role: string } | undefined;
     
     if (!decoded) {
       decoded = userService.verifyToken(token);
