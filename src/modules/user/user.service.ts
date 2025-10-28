@@ -267,11 +267,12 @@ export class UserService {
         analyticsQueue.add('user-registered', {
           type: 'user_registered',
           userId: user.id,
-          metadata: { role: user.role, timestamp: new Date() }
+          metadata: { role: 'business', timestamp: new Date() }
         });
       }
     } catch (error) {
-      logger.warn('Failed to queue background jobs:', error.message);
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.warn('Failed to queue background jobs', { error: msg });
     }
   }
 
@@ -288,7 +289,8 @@ export class UserService {
         });
       }
     } catch (error) {
-      logger.warn('Failed to queue login analytics:', error.message);
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.warn('Failed to queue login analytics', { error: msg });
     }
   }
 

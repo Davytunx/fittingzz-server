@@ -105,7 +105,8 @@ export class UserController {
     const { email, code } = req.body;
     
     if (!email || !code) {
-      return successResponse(res, null, 'Email and verification code are required', 400);
+      successResponse(res, null, 'Email and verification code are required', 400);
+      return;
     }
 
     const result = await this.userService.verifyEmail(email, code);

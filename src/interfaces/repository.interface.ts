@@ -8,6 +8,11 @@ export interface IUserRepository {
   update(id: string, data: UpdateUserDto): Promise<User | null>;
   delete(id: string): Promise<User | null>;
   updateLastLogin(id: string): Promise<User | null>;
+  setEmailVerificationCode(id: string, code: string, expiresAt: Date): Promise<User | null>;
+  verifyEmailWithCode(email: string, code: string): Promise<User | null>;
+  setPasswordResetCode(email: string, code: string, expiresAt: Date): Promise<User | null>;
+  verifyPasswordResetCode(email: string, code: string): Promise<User | null>;
+  emailExists(email: string): Promise<boolean>;
 }
 
 import { User, NewUser } from '../modules/user/user.dto.js';
