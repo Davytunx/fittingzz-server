@@ -20,42 +20,50 @@ export class ClientRepository {
     return result[0] || null;
   }
 
-  async findByAdminId(adminId: string, options?: { offset?: number; limit?: number; search?: string }) {
-    const { offset = 0, limit = 50, search } = options || {};
+  async findByAdminId(adminId: string, options?: { offset?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }) {
+    const { offset = 0, limit = 50, search, sortBy = 'createdAt', sortOrder = 'desc' } = options || {};
     
-    let whereCondition = eq(clients.adminId, adminId);
+    let query = this.db
+      .select()
+      .from(clients)
+      .where(eq(clients.adminId, adminId));
     
+    // Add search filter
     if (search) {
-      whereCondition = and(
-        eq(clients.adminId, adminId),
-        ilike(clients.name, `%${search}%`)
+      query = query.where(
+        and(
+          eq(clients.adminId, adminId),
+          ilike(clients.name, `%${search}%`)
+        )
       );
     }
     
-    return await this.db
-      .select()
-      .from(clients)
-      .where(whereCondition)
-      .orderBy(desc(clients.createdAt))
-      .offset(offset)
-      .limit(limit);
+    // Add sorting
+    const sortColumn = clients[sortBy as keyof typeof clients] || clients.createdAt;
+    query = query.orderBy(sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn));
+    
+    // Add pagination
+    query = query.offset(offset).limit(limit);
+    
+    return await query;
   }
 
   async countByAdminId(adminId: string, search?: string) {
-    let whereCondition = eq(clients.adminId, adminId);
+    let query = this.db
+      .select({ count: count() })
+      .from(clients)
+      .where(eq(clients.adminId, adminId));
     
     if (search) {
-      whereCondition = and(
-        eq(clients.adminId, adminId),
-        ilike(clients.name, `%${search}%`)
+      query = query.where(
+        and(
+          eq(clients.adminId, adminId),
+          ilike(clients.name, `%${search}%`)
+        )
       );
     }
     
-    const result = await this.db
-      .select({ count: count() })
-      .from(clients)
-      .where(whereCondition);
-    
+    const result = await query;
     return result[0]?.count || 0;
   }
 
@@ -120,13 +128,11 @@ export class ClientRepository {
         )
     ]);
     
-    const total = totalClients[0]?.count || 0;
-    const recent = recentClients[0]?.count || 0;
-    
     return {
-      total,
-      recent,
-      growth: total > 0 ? ((recent / total) * 100).toFixed(1) : '0'
+      total: totalClients[0]?.count || 0,
+      recent: recentClients[0]?.count || 0,
+      growth: totalClients[0]?.count > 0 ? 
+        ((recentClients[0]?.count || 0) / totalClients[0].count * 100).toFixed(1) : '0'
     };
   }
 

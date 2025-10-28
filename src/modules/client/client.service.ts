@@ -1,44 +1,23 @@
 import { ClientRepository } from './client.repository.js';
 import { AppError } from '../../utils/errors.js';
 import logger from '../../config/logger.js';
-import { cache } from '../../config/cache.js';
-import { analyticsQueue } from '../../services/queue.service.js';
-import { performance } from 'perf_hooks';
-import { ErrorMonitor } from '../../utils/error-monitor.js';
+
 
 export class ClientService {
-  private readonly CACHE_TTL = 300000; // 5 minutes
   private readonly BATCH_SIZE = 100;
   
   constructor(private clientRepo: ClientRepository) {}
-
-  private getCacheKey(type: string, ...params: string[]): string {
-    return `client:${type}:${params.join(':')}`;
-  }
 
   private async withPerformanceTracking<T>(
     operation: string,
     fn: () => Promise<T>,
     userId?: string
   ): Promise<T> {
-    const start = performance.now();
+    // Simple execution - no tracking overhead
     try {
-      const result = await fn();
-      const duration = performance.now() - start;
-      
-      ErrorMonitor.trackPerformance(operation, duration, { userId, operation });
-      
-      return result;
+      return await fn();
     } catch (error) {
-      const duration = performance.now() - start;
-      
-      ErrorMonitor.trackError(error as Error, {
-        userId,
-        operation,
-        duration,
-        metadata: { operation }
-      });
-      
+      logger.error(`${operation} failed`, { userId, error: (error as Error).message });
       throw error;
     }
   }
@@ -55,22 +34,10 @@ export class ClientService {
         adminId,
       });
 
-      // Invalidate related caches efficiently
-      const cacheKeys = [
-        this.getCacheKey('list', adminId),
-        this.getCacheKey('count', adminId)
-      ];
-      cacheKeys.forEach(key => cache.delete(key));
 
-      // Non-blocking background operations
-      process.nextTick(() => {
-        analyticsQueue?.add('client-created', {
-          type: 'client_created',
-          adminId,
-          clientId: client.id,
-          metadata: { timestamp: new Date(), source: 'api' }
-        }, { priority: 5 });
-      });
+
+      // Simple logging instead of queue
+      logger.info('Client created', { adminId, clientId: client.id });
 
       return { success: true, data: client };
     });
@@ -81,29 +48,21 @@ export class ClientService {
       const { page = 1, limit = 50, search } = options || {};
       const offset = (page - 1) * limit;
       
-      const cacheKey = this.getCacheKey('list', adminId, String(page), String(limit), search || '');
-      let result = cache.get(cacheKey);
+      // Direct database query - no caching complexity
+      const [clients, total] = await Promise.all([
+        this.clientRepo.findByAdminId(adminId, { offset, limit, search }),
+        this.clientRepo.countByAdminId(adminId, search)
+      ]);
       
-      if (!result) {
-      
-        const [clients, total] = await Promise.all([
-          this.clientRepo.findByAdminId(adminId, { offset, limit, search }),
-          this.clientRepo.countByAdminId(adminId, search)
-        ]);
-        
-        result = {
-          clients,
-          pagination: {
-            page,
-            limit,
-            total,
-            pages: Math.ceil(total / limit)
-          }
-        };
-        
-        // Cache for future requests
-        cache.set(cacheKey, result, this.CACHE_TTL);
-      }
+      const result = {
+        clients,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      };
       
       return { success: true, data: result };
     });
@@ -115,16 +74,10 @@ export class ClientService {
         throw new AppError('Invalid parameters', 400);
       }
 
-      const cacheKey = this.getCacheKey('single', id, adminId);
-      let client = cache.get(cacheKey);
-      
+      // Direct database query
+      const client = await this.clientRepo.findById(id, adminId);
       if (!client) {
-        const foundClient = await this.clientRepo.findById(id, adminId);
-        if (!foundClient) {
-          throw new AppError('Client not found', 404);
-        }
-        client = foundClient;
-        cache.set(cacheKey, client, this.CACHE_TTL);
+        throw new AppError('Client not found', 404);
       }
       
       return { success: true, data: client };
@@ -143,30 +96,10 @@ export class ClientService {
         throw new AppError('Client not found', 404);
       }
       
-      // Efficient cache invalidation
-      const cachePatterns = [
-        this.getCacheKey('single', id, adminId),
-        this.getCacheKey('list', adminId),
-        this.getCacheKey('count', adminId)
-      ];
-      cachePatterns.forEach(pattern => {
-        // Clear all cache entries matching pattern
-        cache.delete(pattern);
-      });
+      // No cache to invalidate
       
-      // Update cache with new data
-      cache.set(this.getCacheKey('single', id, adminId), client, this.CACHE_TTL);
-      
-      // Background analytics
-      process.nextTick(() => {
-        analyticsQueue?.add('client-updated', {
-          type: 'client_updated',
-          adminId,
-          clientId: id,
-          changes: Object.keys(updateData),
-          metadata: { timestamp: new Date() }
-        }, { priority: 3 });
-      });
+      // Simple logging
+      logger.info('Client updated', { adminId, clientId: id, changes: Object.keys(updateData) });
       
       return { success: true, data: client };
     });
@@ -183,24 +116,10 @@ export class ClientService {
         throw new AppError('Client not found', 404);
       }
       
-      // Comprehensive cache cleanup
-      const cachePatterns = [
-        this.getCacheKey('single', id, adminId),
-        this.getCacheKey('list', adminId),
-        this.getCacheKey('count', adminId)
-      ];
-      cachePatterns.forEach(pattern => cache.delete(pattern));
+      // No cache to cleanup
       
-      // High-priority background cleanup
-      process.nextTick(() => {
-        analyticsQueue?.add('client-deleted', {
-          type: 'client_deleted',
-          adminId,
-          clientId: id,
-          clientData: { name: client.name, email: client.email },
-          metadata: { timestamp: new Date(), deletedBy: adminId }
-        }, { priority: 1 });
-      });
+      // Simple logging
+      logger.info('Client deleted', { adminId, clientId: id, clientName: client.name });
       
       return { success: true, message: 'Client deleted successfully' };
     });
@@ -214,19 +133,10 @@ export class ClientService {
 
       const results = await this.clientRepo.bulkCreate(adminId, clientsData);
       
-      // Clear relevant caches
-      cache.delete(this.getCacheKey('list', adminId));
-      cache.delete(this.getCacheKey('count', adminId));
+
       
-      // Background analytics
-      process.nextTick(() => {
-        analyticsQueue?.add('clients-bulk-created', {
-          type: 'clients_bulk_created',
-          adminId,
-          count: results.length,
-          metadata: { timestamp: new Date() }
-        });
-      });
+      // Simple logging
+      logger.info('Bulk clients created', { adminId, count: results.length });
       
       return { success: true, data: results, count: results.length };
     });
@@ -234,13 +144,7 @@ export class ClientService {
 
   async getClientStats(adminId: string) {
     return this.withPerformanceTracking('getClientStats', async () => {
-      const cacheKey = this.getCacheKey('stats', adminId);
-      let stats = cache.get(cacheKey);
-      
-      if (!stats) {
-        stats = await this.clientRepo.getStats(adminId);
-        cache.set(cacheKey, stats, this.CACHE_TTL);
-      }
+      const stats = await this.clientRepo.getStats(adminId);
       
       return { success: true, data: stats };
     });

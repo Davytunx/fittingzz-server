@@ -14,7 +14,8 @@ import securityMiddleware from './middleware/security.middleware.js';
 import authRouter from './routes/auth.route.js';
 import clientRouter from './routes/client.route.js';
 import { setupSwagger } from './config/swagger.js';
-import { errorMonitoringMiddleware, globalErrorHandler } from './middleware/error-monitoring.middleware.js';
+
+
 
 const app: Express = express();
 
@@ -59,19 +60,14 @@ app.use(
   })
 );
 
-/**
- * Error monitoring middleware
- */
-app.use(errorMonitoringMiddleware);
+
 
 /**
  * Arcjet security protection with role-based rate limiting
  */
 app.use(securityMiddleware);
 
-/**
- * Health check endpoint
- */
+
 app.get('/health', (req: Request, res: Response) => {
   successResponse(
     res,
@@ -86,9 +82,7 @@ app.get('/health', (req: Request, res: Response) => {
   );
 });
 
-/**
- * Root endpoint
- */
+
 app.get('/', (req: Request, res: Response) => {
   successResponse(
     res,
@@ -142,9 +136,8 @@ app.use(`${API_PREFIX}/clients`, clientRouter);
 app.use(notFoundHandler);
 
 /**
- * Global error handlers - must be last
+ * Global error handler - must be last
  */
-app.use(globalErrorHandler);
 app.use(errorHandler);
 
 export default app;

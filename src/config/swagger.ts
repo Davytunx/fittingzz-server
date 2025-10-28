@@ -9,178 +9,71 @@ const options = {
     info: {
       title: 'Fittingz API',
       version: '1.0.0',
-      description: 'Production-ready REST API for fashion designers to manage their business operations',
-      contact: {
-        name: 'Fittingz Team',
-        email: 'support@fittingz.com',
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT',
-      },
+      description: 'Fashion Designer Client Management API'
     },
     servers: [
       {
         url: `http://localhost:${config.app.port}/api/${config.app.version}`,
-        description: 'Development server',
-      },
-      {
-        url: `https://api.fittingz.com/api/${config.app.version}`,
-        description: 'Production server',
-      },
+        description: 'Development'
+      }
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-        cookieAuth: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: 'auth_token',
-        },
+          bearerFormat: 'JWT'
+        }
       },
       schemas: {
         User: {
           type: 'object',
           properties: {
-            id: {
-              type: 'string',
-              format: 'uuid',
-              description: 'Unique user identifier',
-            },
-            businessName: {
-              type: 'string',
-              description: 'Fashion business name',
-              example: 'Elegant Designs Studio',
-            },
-            email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email address',
-              example: 'designer@example.com',
-            },
-            contactNumber: {
-              type: 'string',
-              description: 'Business contact number',
-              example: '+1234567890',
-            },
-            address: {
-              type: 'string',
-              description: 'Business address',
-              example: '123 Fashion Street, Design City',
-            },
-            role: {
-              type: 'string',
-              enum: ['business', 'super_admin'],
-              description: 'User role',
-              example: 'business',
-            },
-            isEmailVerified: {
-              type: 'boolean',
-              description: 'Email verification status',
-              example: true,
-            },
-            isActive: {
-              type: 'boolean',
-              description: 'Account active status',
-              example: true,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Account creation timestamp',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Last update timestamp',
-            },
-          },
+            id: { type: 'string', format: 'uuid' },
+            businessName: { type: 'string', example: 'Fashion Studio' },
+            email: { type: 'string', format: 'email' },
+            contactNumber: { type: 'string' },
+            address: { type: 'string' },
+            role: { type: 'string', enum: ['business', 'super_admin'] },
+            isEmailVerified: { type: 'boolean' },
+            isActive: { type: 'boolean' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
         },
-        ApiResponse: {
+        Client: {
           type: 'object',
           properties: {
-            success: {
-              type: 'boolean',
-              description: 'Request success status',
-            },
-            message: {
-              type: 'string',
-              description: 'Response message',
-            },
-            data: {
-              type: 'object',
-              description: 'Response data',
-            },
-            timestamp: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Response timestamp',
-            },
-          },
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string', example: 'John Doe' },
+            phone: { type: 'string', example: '1234567890' },
+            email: { type: 'string', format: 'email' },
+            gender: { type: 'string', enum: ['Male', 'Female', 'Other'] },
+            adminId: { type: 'string', format: 'uuid' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
         },
+
         Error: {
           type: 'object',
           properties: {
-            success: {
-              type: 'boolean',
-              example: false,
-            },
-            message: {
-              type: 'string',
-              description: 'Error message',
-            },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  field: {
-                    type: 'string',
-                    description: 'Field with error',
-                  },
-                  message: {
-                    type: 'string',
-                    description: 'Error description',
-                  },
-                },
-              },
-            },
-            timestamp: {
-              type: 'string',
-              format: 'date-time',
-            },
-          },
+            success: { type: 'boolean', example: false },
+            message: { type: 'string' }
+          }
         },
       },
     },
     tags: [
-      {
-        name: 'Authentication',
-        description: 'User authentication and authorization',
-      },
-      {
-        name: 'Email Verification',
-        description: 'Email verification system',
-      },
-      {
-        name: 'Password Reset',
-        description: 'Password reset functionality',
-      },
-      {
-        name: 'User Profile',
-        description: 'User profile management',
-      },
-      {
-        name: 'System',
-        description: 'System health and information',
-      },
+      { name: 'User Service', description: 'User authentication and management' },
+      { name: 'Client Service', description: 'Client management operations' }
     ],
   },
-  apis: ['./src/routes/*.ts', './src/modules/*/*.ts'],
+  apis: [
+    './src/routes/*.ts',
+    './src/modules/*/*.ts',
+    './src/app.ts'
+  ],
 };
 
 const specs = swaggerJsdoc(options);
@@ -191,8 +84,7 @@ export const setupSwagger = (app: Express): void => {
     swaggerUi.serve,
     swaggerUi.setup(specs, {
       explorer: true,
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'Fittingz API Documentation',
+      customSiteTitle: 'Fittingz API'
     })
   );
 };

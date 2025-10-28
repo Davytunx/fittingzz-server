@@ -6,7 +6,7 @@ import { ConflictError, UnauthorizedError, NotFoundError } from '../../utils/err
 import config from '../../config/index.js';
 import logger from '../../config/logger.js';
 import { jwtToken } from '../../utils/jwt.js';
-import { emailQueue, analyticsQueue } from '../../services/queue.service.js';
+
 
 export class UserService {
   constructor(private userRepo: IUserRepository = new UserRepository()) {}
@@ -43,8 +43,16 @@ export class UserService {
     // Generate JWT token
     const token = jwtToken.sign({ userId: user.id, email: user.email, role: user.role });
 
-    // Queue background jobs (fire-and-forget)
-    process.nextTick(() => this.queueBackgroundJobs(user, verificationCode));
+    // Send verification email directly
+    process.nextTick(async () => {
+      try {
+        const { emailService } = await import('../../services/email.service.js');
+        await emailService.sendVerificationEmail(user.email, user.businessName, verificationCode);
+        await emailService.sendWelcomeEmail(user.email, user.businessName);
+      } catch (error) {
+        logger.warn('Failed to send emails', { error: error.message });
+      }
+    });
 
     // Return user without sensitive data
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,8 +101,8 @@ export class UserService {
     // Generate JWT token
     const token = jwtToken.sign({ userId: user.id, email: user.email, role: user.role });
 
-    // Queue login analytics (fire-and-forget)
-    process.nextTick(() => this.queueLoginAnalytics(user));
+    // Simple login logging
+    logger.info('User login analytics', { userId: user.id, timestamp: new Date() });
 
     // Return user without sensitive data
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -205,19 +213,11 @@ export class UserService {
     
     await this.userRepo.setEmailVerificationCode(user.id, verificationCode, verificationExpiresAt);
 
-    // Send verification email
+    // Send verification email directly
     try {
-      if (emailQueue) {
-        emailQueue.add('verification-email', {
-          type: 'verification',
-          email: user.email,
-          data: { businessName: user.businessName, verificationCode }
-        });
-      } else {
-        const { emailService } = await import('../../services/email.service.js');
-        await emailService.sendVerificationEmail(user.email, user.businessName, verificationCode);
-      }
-
+      const { emailService } = await import('../../services/email.service.js');
+      await emailService.sendVerificationEmail(user.email, user.businessName, verificationCode);
+      
       logger.info('Verification email resent', { userId: user.id, email: user.email });
       return { success: true, message: 'Verification email sent successfully' };
     } catch (error) {
@@ -226,71 +226,7 @@ export class UserService {
     }
   }
 
-  /**
-   * Queue background jobs for new user registration
-   */
-  private queueBackgroundJobs(user: { id: string; email: string; businessName: string }, verificationCode?: string): void {
-    try {
-      if (emailQueue) {
-        // Send verification email first
-        if (verificationCode) {
-          emailQueue.add('verification-email', {
-            type: 'verification',
-            email: user.email,
-            data: { businessName: user.businessName, verificationCode }
-          }, { delay: 500 });
-        }
 
-        // Send welcome email after verification
-        emailQueue.add('welcome-email', {
-          type: 'welcome',
-          email: user.email,
-          data: { businessName: user.businessName }
-        }, { delay: 2000 });
-      } else {
-        // Fallback to direct email sending
-        process.nextTick(async () => {
-          try {
-            const { emailService } = await import('../../services/email.service.js');
-            if (verificationCode) {
-              await emailService.sendVerificationEmail(user.email, user.businessName, verificationCode);
-            }
-            await emailService.sendWelcomeEmail(user.email, user.businessName);
-          } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.warn('Failed to send emails', { error: msg });
-          }
-        });
-      }
-
-      if (analyticsQueue) {
-        analyticsQueue.add('user-registered', {
-          type: 'user_registered',
-          userId: user.id,
-          metadata: { role: user.role, timestamp: new Date() }
-        });
-      }
-    } catch (error) {
-      logger.warn('Failed to queue background jobs:', error.message);
-    }
-  }
-
-  /**
-   * Queue login analytics
-   */
-  private queueLoginAnalytics(user: { id: string; lastLoginAt?: Date | null }): void {
-    try {
-      if (analyticsQueue) {
-        analyticsQueue.add('user-login', {
-          type: 'user_login',
-          userId: user.id,
-          metadata: { timestamp: new Date(), lastLogin: user.lastLoginAt }
-        });
-      }
-    } catch (error) {
-      logger.warn('Failed to queue login analytics:', error.message);
-    }
-  }
 
   /**
    * Request password reset
@@ -309,19 +245,11 @@ export class UserService {
     
     await this.userRepo.setPasswordResetCode(email, resetCode, resetExpiresAt);
 
-    // Send reset email
+    // Send reset email directly
     try {
-      if (emailQueue) {
-        emailQueue.add('password-reset-email', {
-          type: 'password_reset',
-          email: user.email,
-          data: { businessName: user.businessName, resetCode }
-        });
-      } else {
-        const { emailService } = await import('../../services/email.service.js');
-        await emailService.sendPasswordResetEmail(user.email, user.businessName, resetCode);
-      }
-
+      const { emailService } = await import('../../services/email.service.js');
+      await emailService.sendPasswordResetEmail(user.email, user.businessName, resetCode);
+      
       logger.info('Password reset requested', { userId: user.id, email: user.email });
       return { success: true, message: 'Password reset code sent to your email' };
     } catch (error) {

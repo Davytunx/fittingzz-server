@@ -43,9 +43,7 @@ const envSchema = z.object({
   // Arcjet
   ARCJET_KEY: z.string().min(1, 'ARCJET_KEY is required'),
 
-  // Redis (Upstash)
-  UPSTASH_REDIS_REST_URL: z.string().url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+
 
   // Email (SMTP)
   SMTP_HOST: z.string().default('smtp.gmail.com'),

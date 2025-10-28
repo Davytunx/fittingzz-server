@@ -4,70 +4,14 @@ import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Client:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         name:
- *           type: string
- *         phone:
- *           type: string
- *         email:
- *           type: string
- *           format: email
- *         gender:
- *           type: string
- *           enum: [Male, Female, Other]
- *         adminId:
- *           type: string
- *           format: uuid
- *         createdAt:
- *           type: string
- *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- *     CreateClientRequest:
- *       type: object
- *       required:
- *         - name
- *         - phone
- *         - email
- *         - gender
- *       properties:
- *         name:
- *           type: string
- *           minLength: 1
- *           maxLength: 255
- *           example: "John Doe"
- *         phone:
- *           type: string
- *           maxLength: 20
- *           example: "1234567890"
- *         email:
- *           type: string
- *           format: email
- *           maxLength: 255
- *           example: "john.doe@example.com"
- *         gender:
- *           type: string
- *           enum: [Male, Female, Other]
- *           example: "Male"
- */
+
 
 /**
  * @swagger
- * /api/v1/clients:
+ * /clients:
  *   post:
- *     summary: Create a new client with performance tracking
- *     description: Creates a new client with sub-400ms response time and background analytics
- *     tags: [Clients]
+ *     summary: Create client
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -75,39 +19,74 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateClientRequest'
+ *             type: object
+ *             required: [name, phone, email, gender]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "John Doe"
+ *               phone:
+ *                 type: string
+ *                 example: "1234567890"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "john@example.com"
+ *               gender:
+ *                 type: string
+ *                 enum: [Male, Female, Other]
+ *                 example: "Male"
  *     responses:
  *       201:
- *         description: Client created successfully
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
+ *         description: Client created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Client'
  */
 router.post('/', authenticate, clientController.createClient.bind(clientController));
 
 /**
  * @swagger
- * /api/v1/clients/stats:
+ * /clients/stats:
  *   get:
- *     summary: Get comprehensive client statistics
- *     tags: [Clients]
+ *     summary: Get client statistics
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Statistics retrieved successfully
- *       401:
- *         description: Unauthorized
+ *         description: Statistics retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     recent:
+ *                       type: integer
  */
 router.get('/stats', authenticate, clientController.getClientStats.bind(clientController));
 
 /**
  * @swagger
- * /api/v1/clients:
+ * /clients:
  *   get:
- *     summary: Get all clients with pagination and search
- *     tags: [Clients]
+ *     summary: Get clients
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -127,18 +106,41 @@ router.get('/stats', authenticate, clientController.getClientStats.bind(clientCo
  *           type: string
  *     responses:
  *       200:
- *         description: Clients retrieved successfully
- *       401:
- *         description: Unauthorized
+ *         description: Clients retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     clients:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Client'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         pages:
+ *                           type: integer
  */
 router.get('/', authenticate, clientController.getClients.bind(clientController));
 
 /**
  * @swagger
- * /api/v1/clients/{id}:
+ * /clients/{id}:
  *   get:
- *     summary: Get a client by ID
- *     tags: [Clients]
+ *     summary: Get client by ID
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -150,20 +152,27 @@ router.get('/', authenticate, clientController.getClients.bind(clientController)
  *           format: uuid
  *     responses:
  *       200:
- *         description: Client retrieved successfully
+ *         description: Client retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Client'
  *       404:
  *         description: Client not found
- *       401:
- *         description: Unauthorized
  */
 router.get('/:id', authenticate, clientController.getClientById.bind(clientController));
 
 /**
  * @swagger
- * /api/v1/clients/{id}:
+ * /clients/{id}:
  *   put:
- *     summary: Update a client by ID
- *     tags: [Clients]
+ *     summary: Update client
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -173,22 +182,43 @@ router.get('/:id', authenticate, clientController.getClientById.bind(clientContr
  *         schema:
  *           type: string
  *           format: uuid
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               gender:
+ *                 type: string
+ *                 enum: [Male, Female, Other]
  *     responses:
  *       200:
- *         description: Client updated successfully
- *       404:
- *         description: Client not found
- *       401:
- *         description: Unauthorized
+ *         description: Client updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Client'
  */
 router.put('/:id', authenticate, clientController.updateClient.bind(clientController));
 
 /**
  * @swagger
- * /api/v1/clients/{id}:
+ * /clients/{id}:
  *   delete:
- *     summary: Delete a client by ID
- *     tags: [Clients]
+ *     summary: Delete client
+ *     tags: [Client Service]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -200,11 +230,16 @@ router.put('/:id', authenticate, clientController.updateClient.bind(clientContro
  *           format: uuid
  *     responses:
  *       200:
- *         description: Client deleted successfully
- *       404:
- *         description: Client not found
- *       401:
- *         description: Unauthorized
+ *         description: Client deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
  */
 router.delete('/:id', authenticate, clientController.deleteClient.bind(clientController));
 

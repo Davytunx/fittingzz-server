@@ -11,79 +11,53 @@ const router: Router = Router();
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Register new fashion designer
- *     description: Create a new user account for fashion designers. Sends email verification code.
- *     tags: [Authentication]
+ *     summary: Register user
+ *     tags: [User Service]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - businessName
- *               - email
- *               - password
- *               - contactNumber
- *               - address
+ *             required: [businessName, email, password, contactNumber, address]
  *             properties:
  *               businessName:
  *                 type: string
- *                 minLength: 2
- *                 maxLength: 255
- *                 description: Fashion business name
- *                 example: "Elegant Designs Studio"
+ *                 example: "Fashion Studio"
  *               email:
  *                 type: string
  *                 format: email
- *                 description: Business email address
  *                 example: "designer@example.com"
  *               password:
  *                 type: string
- *                 minLength: 8
- *                 pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)"
- *                 description: Strong password with uppercase, lowercase, and number
  *                 example: "SecurePass123"
  *               contactNumber:
  *                 type: string
- *                 minLength: 10
- *                 maxLength: 20
- *                 description: Business contact number
  *                 example: "+1234567890"
  *               address:
  *                 type: string
- *                 minLength: 10
- *                 description: Business address
- *                 example: "123 Fashion Street, Design City"
+ *                 example: "123 Fashion Street"
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
  *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         user:
- *                           $ref: '#/components/schemas/User'
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *                     token:
+ *                       type: string
  *       409:
- *         description: Email already registered
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       422:
- *         description: Validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       429:
- *         description: Too many requests
+ *         description: Email already exists
  *         content:
  *           application/json:
  *             schema:
@@ -95,75 +69,44 @@ router.post('/register', validateBody(signupSchema), userController.register);
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Login fashion designer
- *     description: Authenticate user with email and password. Requires email verification.
- *     tags: [Authentication]
+ *     summary: Login user
+ *     tags: [User Service]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
- *                 description: User email address
  *                 example: "designer@example.com"
  *               password:
  *                 type: string
- *                 description: User password
  *                 example: "SecurePass123"
  *     responses:
  *       200:
  *         description: Login successful
- *         headers:
- *           Set-Cookie:
- *             description: HTTP-only authentication cookie
- *             schema:
- *               type: string
- *               example: "auth_token=jwt_token_here; HttpOnly; Secure; SameSite=Strict"
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
  *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         user:
- *                           $ref: '#/components/schemas/User'
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *                     token:
+ *                       type: string
  *       401:
  *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Email not verified
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/Error'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         requiresVerification:
- *                           type: boolean
- *                           example: true
- *                         email:
- *                           type: string
- *                           example: "designer@example.com"
- *       429:
- *         description: Too many requests
  *         content:
  *           application/json:
  *             schema:
@@ -176,7 +119,10 @@ router.post('/login', validateBody(loginSchema), userController.login);
  * /auth/logout:
  *   post:
  *     summary: Logout user
- *     tags: [Auth]
+ *     tags: [User Service]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
  */
 router.post('/logout', userController.logout);
 
@@ -185,9 +131,21 @@ router.post('/logout', userController.logout);
  * /auth/profile:
  *   get:
  *     summary: Get user profile
- *     tags: [Auth]
+ *     tags: [User Service]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
  */
 router.get('/profile', authenticate, userController.getProfile);
 
@@ -196,9 +154,24 @@ router.get('/profile', authenticate, userController.getProfile);
  * /auth/profile:
  *   put:
  *     summary: Update user profile
- *     tags: [Auth]
+ *     tags: [User Service]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               businessName:
+ *                 type: string
+ *               contactNumber:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated
  */
 router.put('/profile', authenticate, validateBody(updateProfileSchema), userController.updateProfile);
 
@@ -207,9 +180,12 @@ router.put('/profile', authenticate, validateBody(updateProfileSchema), userCont
  * /auth/account:
  *   delete:
  *     summary: Delete user account
- *     tags: [Auth]
+ *     tags: [User Service]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deleted
  */
 router.delete('/account', authenticate, userController.deleteAccount);
 
@@ -217,48 +193,28 @@ router.delete('/account', authenticate, userController.deleteAccount);
  * @swagger
  * /auth/verify-email:
  *   post:
- *     summary: Verify email with 6-digit code
- *     description: Verify user email address using 6-digit code sent via email
- *     tags: [Email Verification]
+ *     summary: Verify email
+ *     tags: [User Service]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - code
+ *             required: [email, code]
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
- *                 description: User email address
  *                 example: "designer@example.com"
  *               code:
  *                 type: string
- *                 pattern: "^\\d{6}$"
- *                 description: 6-digit verification code
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: Email verified successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *         description: Email verified
  *       400:
- *         description: Invalid or expired code
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       429:
- *         description: Too many verification attempts
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Invalid code
  */
 router.post('/verify-email', verificationAttemptRateLimit, validateBody(verifyEmailSchema), userController.verifyEmail);
 
@@ -267,7 +223,21 @@ router.post('/verify-email', verificationAttemptRateLimit, validateBody(verifyEm
  * /auth/resend-verification:
  *   post:
  *     summary: Resend verification email
- *     tags: [Auth]
+ *     tags: [User Service]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email sent
  */
 router.post('/resend-verification', verificationCodeRateLimit, validateBody(resendVerificationSchema), userController.resendVerificationEmail);
 
