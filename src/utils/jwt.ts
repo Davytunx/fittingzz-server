@@ -3,10 +3,9 @@ import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
 export const jwtToken = {
-  sign: (payload: object, customOptions?: { expiresIn?: string }): string => {
+  sign: (payload: object): string => {
     try {
-      const expiresIn = customOptions?.expiresIn || config.jwt.expiresIn;
-      const token = jwt.sign(payload, config.jwt.secret, { expiresIn });
+      const token = jwt.sign(payload, config.jwt.secret, { expiresIn: '7d' });
       return token;
     } catch (error) {
       logger.error('Failed to sign token:', error);

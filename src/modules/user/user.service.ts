@@ -342,10 +342,9 @@ export class UserService {
       return { success: false, message: 'Invalid or expired reset code' };
     }
 
-    // Generate temporary reset token (5 minutes)
+    // Generate temporary reset token
     const resetToken = jwtToken.sign(
-      { userId: user.id, email: user.email, purpose: 'password_reset' },
-      { expiresIn: '5m' }
+      { userId: user.id, email: user.email, purpose: 'password_reset' }
     );
 
     logger.info('Reset code verified', { userId: user.id, email: user.email });
